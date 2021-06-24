@@ -11,6 +11,7 @@ batch_size = 50
 
 sys.setrecursionlimit(10**4)
 
+# retrieve metadata for up to 50 video ids
 def get_videos(id_list):
     if len(id_list) > batch_size:
         print("too many ids")
@@ -37,25 +38,37 @@ def get_videos(id_list):
 
 if __name__ == "__main__":
     with open(list_of_videos_file) as video_list:
-        # batch them up
+        
         big_list_of_ids = list(line.replace("\n", "") for line in video_list)
-        buckets = math.ceil(len(big_list_of_ids) / batch_size)
+
+
+
+        # batch them up
+        # a batch is a bunch of videos to get the metadata for all at once
+
+
+        # distribute the video ids into the required number of batches
+        num_batches = math.ceil(len(big_list_of_ids) / batch_size)
         def unneccesary_recursion(build):
             if not len(big_list_of_ids):
+                # no more ids to distribute
                 return build
             vid_id = big_list_of_ids.pop()
             front = build[1:]
             end = [build[0] + [vid_id]]
             return unneccesary_recursion(front + end)
 
-        batches = unneccesary_recursion([[] for _ in range(buckets)])
+        batches = unneccesary_recursion([[] for _ in range(num_batches)])
 
+        # this works but you get no feedback
         # all_video_data = (x for flatten_list in map(get_videos, batches) for x in flatten_list)
 
-        all_in_danger = []
 
+        # process each batch, collecting the videos that are
+        # unlisted and uploaded earlier than Jan 1 2017
+        all_in_danger = []
         for i, batch in enumerate(batches):
-            print(f"processing batch {i+1} of {buckets} (size {len(batch)})")
+            print(f"processing batch {i+1} of {num_batches} (size {len(batch)})")
 
             vid_metadata = get_videos(batch)
 
@@ -69,6 +82,7 @@ if __name__ == "__main__":
                 ))
             all_in_danger.extend(in_danger)
 
+        # inform the bad news
         print(f"{len(all_in_danger)} in danger")
         for vid in all_in_danger:
             print(f'{vid["id"]} -- {vid["snippet"]["title"]} ')
