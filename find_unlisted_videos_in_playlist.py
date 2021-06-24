@@ -50,6 +50,9 @@ def get_all_videos_from_playlist(playlist_id):
     return [x for flatten_list in [first_videos] + list(amazing(next_page)) for x in flatten_list]
 
 
+def upload_date_for_video(video_json):
+    return datetime.strptime(video_json["snippet"]["publishedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+
 
 
 if __name__ == "__main__":
@@ -70,7 +73,7 @@ if __name__ == "__main__":
             # parse the upload time for each unlisted video
             # (god damn datetime is a PITA)
             unlisted_plus_upload_time = [
-                (x, datetime.strptime(x["snippet"]["publishedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)) for x in unlisted
+                (x, upload_date_for_video(x)) for x in unlisted
             ]
 
             # find all the videos uploaded before the critical time
