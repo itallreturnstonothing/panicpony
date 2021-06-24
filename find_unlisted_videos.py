@@ -1,10 +1,8 @@
 import requests
 import json
 import math
-from datetime import datetime
 import sys
-from find_unlisted_videos_in_playlist import critical_datetime, api_key, upload_date_for_video
-
+from common import *
 
 list_of_videos_file = "testdata.txt"
 batch_size = 50
@@ -68,7 +66,8 @@ if __name__ == "__main__":
         # unlisted and uploaded earlier than Jan 1 2017
         all_in_danger = []
         for i, batch in enumerate(batches):
-            print(f"processing batch {i+1} of {num_batches} (size {len(batch)})")
+            print(" "*70, end="\r")
+            print(f"processing batch {i+1} of {num_batches} (size {len(batch)})", end="\r")
 
             vid_metadata = get_videos(batch)
 
@@ -76,11 +75,13 @@ if __name__ == "__main__":
                     lambda x: ( 
                                 x["status"]["privacyStatus"] == "unlisted" 
                                 and 
-                                upload_date_for_video(x) < critical_datetime
+                                parse_date_format(x["snippet"]["publishedAt"]) < critical_datetime
                             ),
                     vid_metadata
                 ))
             all_in_danger.extend(in_danger)
+
+        print()
 
         # inform the bad news
         print(f"{len(all_in_danger)} in danger")

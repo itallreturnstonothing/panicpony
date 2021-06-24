@@ -1,16 +1,7 @@
 import requests
 import json
-from datetime import datetime, timezone
+from common import *
 
-# const
-critical_datetime = datetime(year=2017, month=1, day=2, tzinfo=timezone.utc)
-# january 2 just to be safe
-
-###############################
-#    CHANGE THESE VARIABLES   #
-#    for config adjustments   #
-###############################
-api_key = "AIzaSyA-dlBUjVQeuc4a6ZN4RkNUYDFddrVLxrA"
 list_of_playlists_file = "playlists.txt"
 
 
@@ -19,7 +10,7 @@ def get_single_page_of_videos(playlist_id, page_token=None):
             (   
                 f'https://www.googleapis.com/youtube/v3/playlistItems?'
                 f'playlistId={playlist_id}'
-                f'&part=status,snippet'
+                f'&part=status,snippet,contentDetails'
                 f'&maxResults=50'
                 f'{"&pageToken=" + page_token if page_token else ""}'
                 f'&key={api_key}'
@@ -50,8 +41,6 @@ def get_all_videos_from_playlist(playlist_id):
     return [x for flatten_list in [first_videos] + list(amazing(next_page)) for x in flatten_list]
 
 
-def upload_date_for_video(video_json):
-    return datetime.strptime(video_json["snippet"]["publishedAt"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
 
 
@@ -73,7 +62,7 @@ if __name__ == "__main__":
             # parse the upload time for each unlisted video
             # (god damn datetime is a PITA)
             unlisted_plus_upload_time = [
-                (x, upload_date_for_video(x)) for x in unlisted
+                (x, parse_date_format(x["contentDetails"]["videoPublishedAt"])) for x in unlisted
             ]
 
             # find all the videos uploaded before the critical time
@@ -82,5 +71,4 @@ if __name__ == "__main__":
             # print findings to the console
             print(f"{len(in_danger)} in danger")
             for (vid, _) in in_danger:
-                print(f'    title -- {vid["snippet"]["title"]}')
-                print(f'    id ----- {vid["snippet"]["resourceId"]["videoId"]}')
+                print(f'    {vid["snippet"]["resourceId"]["videoId"]} -- {vid["snippet"]["title"]} ')
