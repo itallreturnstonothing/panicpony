@@ -1,13 +1,11 @@
 import requests
 import json
-import math
 import sys
 from common import *
 
 list_of_videos_file = "testdata.txt"
 batch_size = 50
 
-sys.setrecursionlimit(10**4)
 
 # retrieve metadata for up to 50 video ids
 def get_videos(id_list):
@@ -43,20 +41,9 @@ if __name__ == "__main__":
 
         # batch them up
         # a batch is a bunch of videos to get the metadata for all at once
-
-
-        # distribute the video ids into the required number of batches
-        num_batches = math.ceil(len(big_list_of_ids) / batch_size)
-        def unneccesary_recursion(build):
-            if not len(big_list_of_ids):
-                # no more ids to distribute
-                return build
-            vid_id = big_list_of_ids.pop()
-            front = build[1:]
-            end = [build[0] + [vid_id]]
-            return unneccesary_recursion(front + end)
-
-        batches = unneccesary_recursion([[] for _ in range(num_batches)])
+        
+        batches = make_batches_of_size(big_list_of_ids, batch_size)
+        num_batches = len(batches)
 
         # this works but you get no feedback
         # all_video_data = (x for flatten_list in map(get_videos, batches) for x in flatten_list)
