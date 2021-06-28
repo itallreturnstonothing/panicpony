@@ -24,7 +24,7 @@ def get_channel_id_for_user(username):
     response = requests.get(
             (
                 f'https://www.googleapis.com/youtube/v3/channels?'
-                f'fromUsername={username}'
+                f'forUsername={username}'
                 f'&part=id'
                 f'&key={api_key}'
             )
@@ -40,6 +40,7 @@ def get_channel_id_for_user(username):
             print(response.text)
     else:
         print(f"bad response for {username}")
+        print(response.text)
     # fallthrough
     return None
 
@@ -63,6 +64,7 @@ def get_channel_id_for_custom_url(custom_url):
     else:
         print(f"bad url {custom_url}")
         print(response.text)
+    return None
 
 
 
@@ -159,9 +161,13 @@ if __name__ == "__main__":
                 if basic_channel_url_matcher.search(url):
                     yield get_id_from_basic_url(url)
                 elif user_channel_url_matcher.search(url):
-                    yield get_id_from_user_url(url)
+                    c_id = get_id_from_user_url(url)
+                    if c_id:
+                        yield c_id
                 elif custom_url_matcher.search(url):
-                    yield get_channel_id_for_custom_url(url)
+                    c_id = get_channel_id_for_custom_url(url) 
+                    if c_id:
+                        yield c_id
                 else:
                     print(f"can't handle url {url}")
 
