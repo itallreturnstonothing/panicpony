@@ -67,4 +67,4 @@ Possibly useful in this pattern:
 `python3 get_playlists_for_channel.py -o - | python3 find_unlisted_videos_in_playlist.py -i -`
 
 The `--key` argument will change the API key the scripts use, in case the default key stops working.  
-One could also edit `common.py` to change the API key. 
+One could also edit `common.py` to change the API key. But be careful if you do this. Committing such a change could expose your (maybe sensitive) API key to the world. 
