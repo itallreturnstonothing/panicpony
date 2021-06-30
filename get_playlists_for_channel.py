@@ -116,7 +116,7 @@ def get_upload_playlists_for_channels(channel_ids):
         )
     if not response.status_code == 200:
         print_or_not("problem getting channel upload playlists")
-        print_or_not(resposne.text)
+        print_or_not(response.text)
         return None
 
     playlists_response = json.loads(response.text)
@@ -148,67 +148,20 @@ def get_channel_names(channel_ids):
 
 if __name__ == "__main__":
 
-    # define options
-    def add_options_callback(parser):
-        parser.add_argument(
-            "-i",
-            "--input-file",
-            help="File containing a list of channel links, one per line. Default is channellist.txt. "
-            "Pass - to read from stdin.",
-            metavar="file",
-            default="channellist.txt"
-        )
-        parser.add_argument(
-            "-o",
-            "--machine-readable-output",
-            help="Output file. This script will write only the playlist IDs found, one per line. "
-            "Default is no output file, only the typical stdout messages. "
-            "Pass - for machine readable output to stdout. Output to stdout implies quiet operation (no human-readable messages).",
-            metavar="file"
-        )
-        parser.add_argument(
-            "-q",
-            "--quiet",
-            action="store_true",
-            help="Suppress stdout messages."
 
+    helptext = HelpText(
+        input = "File containing a list of channel links, one per line. Default is channellist.txt. "
+        "Pass - to read from stdin.",
+        output = "Output file. This script will write only the playlist IDs found, one per line. "
+        "Default is no output file, only the typical stdout messages. "
+        "Pass - for machine readable output to stdout. Output to stdout implies quiet operation (no human-readable messages).",
+        default_input = "channellist.txt"
         )
 
-    args = parse_args(add_options_callback)
-    channels_list = args.input_file
-    if args.quiet and not args.machine_readable_output:
-        print("quiet + no output file. not doing anything.")
-        exit()
+    common_args_parsed = parse_args(helptext, lambda x: None)
     from common import api_key # why is this so dumb
-    quiet = args.quiet or (args.machine_readable_output == "-")
-    set_quiet(quiet)
-    
-    # try to set up the channel list file
-    if channels_list == "-":
-        import sys
-        channels_file = sys.stdin
-    else:
-        try:
-            channels_file = open(channels_list)
-        except Exception as e:
-            print(f"failed to open input file {channels_list}")
-            print(e)
-            exit()
-
-    # try to set up the machine-readable output file if one has been specified
-    if args.machine_readable_output:
-        if args.machine_readable_output == "-":
-            import sys
-            output_file = sys.stdout
-        else:
-            try:
-                output_file = open(args.machine_readable_output, "w")
-            except Exception as e:
-                print(f"failed to open output file {args.machine_readable_output}")
-                print(e)
-                exit()
-    else:
-        output_file = None
+    channels_file = common_args_parsed.in_file
+    output_file = common_args_parsed.out_file
 
     try:
         def get_id_from_basic_url(url):

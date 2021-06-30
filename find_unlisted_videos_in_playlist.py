@@ -2,8 +2,6 @@ import requests
 import json
 from common import *
 
-list_of_playlists_file = "playlists.txt"
-
 
 def get_single_page_of_videos(playlist_id, page_token=None):
     response = requests.get(
@@ -18,8 +16,8 @@ def get_single_page_of_videos(playlist_id, page_token=None):
         )
 
     if not response.status_code == 200:
-        print("it's fucked")
-        return None
+        print_or_not("it's fucked")
+        return ([], None)
 
     precious_data = json.loads(response.text)
     return (
@@ -45,19 +43,34 @@ def get_all_videos_from_playlist(playlist_id):
 
 
 if __name__ == "__main__":
-    with open(list_of_playlists_file) as playlists:
+
+    helptext = HelpText(
+        input = "File containing a list of playlist IDs, one per line. Default is playlists.txt. "
+        "Pass - to read from stdin.",
+        output = "Output file. This script will write only the IDs of unlisted, pre-2017 videos found, one per line. "
+        "Default is no output file, only the typical stdout messages. "
+        "Pass - for machine readable output to stdout. Output to stdout implies quiet operation (no human-readable messages).",
+        default_input = "playlists.txt"
+    )
+
+    common_args_parsed = parse_args(helptext, lambda x: None)
+    from common import api_key # why is this so dumb
+    playlists = common_args_parsed.in_file
+    output_file = common_args_parsed.out_file
+
+    try:
         for pl_id in (x.rstrip() for x in playlists):
 
-            print(f"===== processing {pl_id} =====")
+            print_or_not(f"===== processing {pl_id} =====")
 
 
             videos = get_all_videos_from_playlist(pl_id)
-            print(f"{len(videos)} videos")
+            print_or_not(f"{len(videos)} videos")
 
 
             # find all the unlisted videos in the playlist
             unlisted = list(filter(lambda x: x["status"]["privacyStatus"] == "unlisted", videos))
-            print(f"{len(unlisted)} unlisted")
+            print_or_not(f"{len(unlisted)} unlisted")
 
             # parse the upload time for each unlisted video
             # (god damn datetime is a PITA)
@@ -69,6 +82,13 @@ if __name__ == "__main__":
             in_danger = list(filter(lambda x: x[1] < critical_datetime, unlisted_plus_upload_time))
 
             # print findings to the console
-            print(f"{len(in_danger)} in danger")
+            print_or_not(f"{len(in_danger)} in danger")
             for (vid, _) in in_danger:
-                print(f'    {vid["snippet"]["resourceId"]["videoId"]} -- {vid["snippet"]["title"]} ')
+                vid_id = vid["snippet"]["resourceId"]["videoId"]
+                print_or_not(f'    {vid_id} -- {vid["snippet"]["title"]} ')
+                if output_file:
+                    output_file.write(f"{vid_id}\n")
+    finally:
+        playlists.close()
+        if output_file:
+            output_file.close()
