@@ -36,12 +36,9 @@ def make_batches_of_size(big_list, batch_size):
     remain = big_list[num_batches*(batch_size - 1):]
     return unnecessary_recursion(remain, kickstart)
 
-def print_or_not(message, end=None):
+def print_or_not(*args, **kwargs):
     if not quiet:
-        if end:
-            print(message, end)
-        else:
-            print(message)
+        print(*args, **kwargs)
 
 def only_real_lines(iterable_lines):
     return (line for line in iterable_lines if not (line.isspace() or line.strip()[0] == "#"))

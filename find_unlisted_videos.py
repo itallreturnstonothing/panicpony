@@ -1,6 +1,5 @@
 import requests
 import json
-import sys
 from common import *
 
 batch_size = 50
