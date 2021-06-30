@@ -79,6 +79,9 @@ def get_single_page_of_playlists(channel_id, page_token=None):
         )
     if response.status_code == 200:
         playlist_response = json.loads(response.text)
+        for playlist in playlist_response["items"]: # Fixes the issue where channelId is missing
+            if playlist["snippet"].get("channelId") == None:
+                playlist["snippet"]["channelId"] = channel_id
         return (
                 playlist_response["items"],
                 playlist_response["nextPageToken"] if "nextPageToken" in playlist_response else None
