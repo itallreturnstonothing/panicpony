@@ -11,7 +11,6 @@ basic_channel_url_matcher = re.compile(r"youtube.com/channel/(.{24})")
 user_channel_url_matcher = re.compile(r"youtube.com/user/([^/]+)")
 custom_url_matcher = re.compile(r"(youtube.com/c/[^/]+)")
 
-
 # a channel's uploaded videos playlist can be obtained
 # from the channel id just by replacing a character
 def transform_to_uploads_id(channel_id):
@@ -47,7 +46,7 @@ def get_channel_id_for_user(username):
 
 def get_channel_id_for_custom_url(custom_url):
     url_to_use = "https://" + custom_url_matcher.search(custom_url).group(1)
-    response = requests.get(custom_url)
+    response = requests.get(custom_url, cookies=consent_cookies)
     if response.status_code == 200:
         # thanks Anon
         # grep -oP "(?<=externalId\":)[[:graph:]]+(?=,)
