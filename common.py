@@ -80,7 +80,6 @@ def parse_args(helptext, add_options_callback):
     if args.quiet and not args.machine_readable_output:
         print("quiet + no output file. not doing anything.")
         exit()
-    from common import api_key # why is this so dumb
     global quiet
     quiet = args.quiet or (args.machine_readable_output == "-")
     
