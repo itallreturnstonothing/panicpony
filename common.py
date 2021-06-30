@@ -43,6 +43,9 @@ def print_or_not(message, end=None):
         else:
             print(message)
 
+def only_real_lines(iterable_lines):
+    return (line for line in iterable_lines if not (line.isspace() or line.strip()[0] == "#"))
+
 
 def parse_args(helptext, add_options_callback):
     global api_key

@@ -185,7 +185,7 @@ if __name__ == "__main__":
                 else:
                     print_or_not(f"can't handle url {url}")
 
-        real_lines = (line for line in channels_file if not (line.isspace() or line.strip()[0] == "#"))
+        real_lines = only_real_lines(channels_file)
         channel_ids = list(process_urls(line.rstrip() for line in real_lines))
     finally:
         channels_file.close()

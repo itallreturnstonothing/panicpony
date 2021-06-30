@@ -59,7 +59,8 @@ if __name__ == "__main__":
     output_file = common_args_parsed.out_file
 
     try:
-        for pl_id in (x.rstrip() for x in playlists):
+        real_lines = only_real_lines(playlists)
+        for pl_id in (x.rstrip() for x in real_lines):
 
             print_or_not(f"===== processing {pl_id} =====")
 

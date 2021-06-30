@@ -48,8 +48,9 @@ if __name__ == "__main__":
     video_list = common_args_parsed.in_file
     output_file = common_args_parsed.out_file
 
-    try:        
-        big_list_of_ids = list(line.rstrip() for line in video_list)
+    try:
+        real_lines = only_real_lines(video_list)
+        big_list_of_ids = list(line.rstrip() for line in real_lines)
 
 
         # batch them up
