@@ -3,7 +3,6 @@ import requests
 import json
 import re
 
-channels_list = "channellist.txt"
 batch_size = 50
 
 
@@ -35,12 +34,12 @@ def get_channel_id_for_user(username):
         if "items" in channel_response and len(channel_response["items"]):
             return channel_response["items"][0]["id"]
         else:
-            print("problem!")
-            print(username)
-            print(response.text)
+            print_or_not("problem!")
+            print_or_not(username)
+            print_or_not(response.text)
     else:
-        print(f"bad response for {username}")
-        print(response.text)
+        print_or_not(f"bad response for {username}")
+        print_or_not(response.text)
     # fallthrough
     return None
 
@@ -59,11 +58,11 @@ def get_channel_id_for_custom_url(custom_url):
         elif match2:
             return match2.group(1)
         else:
-            print(f"can't get channel id: {custom_url}")
-            print(response.text)
+            print_or_not(f"can't get channel id: {custom_url}")
+            print_or_not(response.text)
     else:
-        print(f"bad url {custom_url}")
-        print(response.text)
+        print_or_not(f"bad url {custom_url}")
+        print_or_not(response.text)
     return None
 
 
@@ -86,12 +85,13 @@ def get_single_page_of_playlists(channel_id, page_token=None):
                 playlist_response["nextPageToken"] if "nextPageToken" in playlist_response else None
                 )
     else:
-        print(f"failed getting playlists for {channel_id} (pageToken {page_token})")
-        print(response.text)
-        return None
+        print_or_not(f"failed getting playlists for {channel_id} (pageToken {page_token})")
+        print_or_not(response.text)
+        return ([], None)
 
 
 def get_all_playlists_for_channel(channel_id):
+    print_or_not(f"collecting playlist for channel {channel_id}")
     def get_all_playlists(channel_id, next_page):
         while(next_page):
             next_playlists, next_page = get_single_page_of_playlists(channel_id, next_page)
@@ -103,7 +103,7 @@ def get_all_playlists_for_channel(channel_id):
 
 def get_upload_playlists_for_channels(channel_ids):
     if len(channel_ids) > batch_size:
-        print("woah pardner")
+        print_or_not("woah pardner")
         return None
     playlist_ids = map(transform_to_uploads_id, channel_ids)
     response = requests.get(
@@ -116,8 +116,8 @@ def get_upload_playlists_for_channels(channel_ids):
             )
         )
     if not response.status_code == 200:
-        print("problem getting channel upload playlists")
-        print(resposne.text)
+        print_or_not("problem getting channel upload playlists")
+        print_or_not(resposne.text)
         return None
 
     playlists_response = json.loads(response.text)
@@ -146,11 +146,72 @@ def get_channel_names(channel_ids):
     channel_names_response = json.loads(response.text)
     return {c["id"] : c["snippet"]["title"] for c in playlists_response["items"]}
 '''
-    
-
 
 if __name__ == "__main__":
-    with open(channels_list) as channels_file:
+
+    # define options
+    def add_options_callback(parser):
+        parser.add_argument(
+            "-i",
+            "--input-file",
+            help="File containing a list of channel links, one per line. Default is channellist.txt. "
+            "Pass - to read from stdin.",
+            metavar="file",
+            default="channellist.txt"
+        )
+        parser.add_argument(
+            "-o",
+            "--machine-readable-output",
+            help="Output file. This script will write only the playlist IDs found, one per line. "
+            "Default is no output file, only the typical stdout messages. "
+            "Pass - for machine readable output to stdout. Output to stdout implies quiet operation (no human-readable messages).",
+            metavar="file"
+        )
+        parser.add_argument(
+            "-q",
+            "--quiet",
+            action="store_true",
+            help="Suppress stdout messages."
+
+        )
+
+    args = parse_args(add_options_callback)
+    channels_list = args.input_file
+    if args.quiet and not args.machine_readable_output:
+        print("quiet + no output file. not doing anything.")
+        exit()
+    from common import api_key # why is this so dumb
+    quiet = args.quiet or (args.machine_readable_output == "-")
+    set_quiet(quiet)
+    
+    # try to set up the channel list file
+    if channels_list == "-":
+        import sys
+        channels_file = sys.stdin
+    else:
+        try:
+            channels_file = open(channels_list)
+        except Exception as e:
+            print(f"failed to open input file {channels_list}")
+            print(e)
+            exit()
+
+    # try to set up the machine-readable output file if one has been specified
+    if args.machine_readable_output:
+        if args.machine_readable_output == "-":
+            import sys
+            output_file = sys.stdout
+        else:
+            try:
+                output_file = open(args.machine_readable_output, "w")
+            except Exception as e:
+                print(f"failed to open output file {args.machine_readable_output}")
+                print(e)
+                exit()
+    else:
+        output_file = None
+
+    try:
         def get_id_from_basic_url(url):
             return basic_channel_url_matcher.search(url).group(1)
         def get_id_from_user_url(url):
@@ -158,6 +219,7 @@ if __name__ == "__main__":
 
         def process_urls(url_list):
             for url in url_list:
+                print_or_not(f"retrieving channel id for {url}")
                 if basic_channel_url_matcher.search(url):
                     yield get_id_from_basic_url(url)
                 elif user_channel_url_matcher.search(url):
@@ -169,9 +231,12 @@ if __name__ == "__main__":
                     if c_id:
                         yield c_id
                 else:
-                    print(f"can't handle url {url}")
+                    print_or_not(f"can't handle url {url}")
 
-        channel_ids = list(process_urls(x.replace("\n", "") for x in channels_file))
+        real_lines = (line for line in channels_file if not (line.isspace() or line.strip()[0] == "#"))
+        channel_ids = list(process_urls(line.rstrip() for line in real_lines))
+    finally:
+        channels_file.close()
 
     # get the channels' uploads playlists
     channel_id_batches = make_batches_of_size(channel_ids, batch_size)
@@ -190,13 +255,18 @@ if __name__ == "__main__":
     # for batch in channel_id_batches:
     #     channel_names.update(get_channel_names(batch))
 
-
-    for channel_id in channel_ids:
-        playlists = list(filter(lambda x: x["snippet"]["channelId"] == channel_id, all_playlists))
-        if len(playlists):
-            channel_name = playlists[0]["snippet"]["channelTitle"]
-            print(f"{channel_name}")
-            for playlist in playlists:
-                print(f'    {playlist["snippet"]["title"]} -- {playlist["id"]}')
-        else:
-            print(f"channel {channel_id} has no playlists")
+    try:
+        for channel_id in channel_ids:
+            playlists = list(filter(lambda x: x["snippet"]["channelId"] == channel_id, all_playlists))
+            if len(playlists):
+                channel_name = playlists[0]["snippet"]["channelTitle"]
+                print_or_not(f"{channel_name}")
+                for playlist in playlists:
+                    print_or_not(f'    {playlist["id"]} -- {playlist["snippet"]["title"]}')
+                    if output_file:
+                        output_file.write(f'{playlist["id"]}\n')
+            else:
+                print_or_not(f"channel {channel_id} has no playlists")
+    finally:
+        if output_file:
+            output_file.close()

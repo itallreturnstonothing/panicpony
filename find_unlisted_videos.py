@@ -33,9 +33,10 @@ def get_videos(id_list):
 
 
 if __name__ == "__main__":
+
     with open(list_of_videos_file) as video_list:
         
-        big_list_of_ids = list(line.replace("\n", "") for line in video_list)
+        big_list_of_ids = list(line.rstrip() for line in video_list)
 
 
 
@@ -73,5 +74,5 @@ if __name__ == "__main__":
         # inform the bad news
         print(f"{len(all_in_danger)} in danger")
         for vid in all_in_danger:
-            print(f'{vid["id"]} -- {vid["snippet"]["title"]} ')
+            print(f'{vid["id"]} -- {vid["snippet"]["title"]}')
 

@@ -46,7 +46,7 @@ def get_all_videos_from_playlist(playlist_id):
 
 if __name__ == "__main__":
     with open(list_of_playlists_file) as playlists:
-        for pl_id in (x.replace("\n", "") for x in playlists):
+        for pl_id in (x.rstrip() for x in playlists):
 
             print(f"===== processing {pl_id} =====")
 
