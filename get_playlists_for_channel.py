@@ -2,6 +2,7 @@ from common import *
 import requests
 import json
 import re
+import sys
 
 channels_list = "channellist.txt"
 batch_size = 50
@@ -92,6 +93,7 @@ def get_single_page_of_playlists(channel_id, page_token=None):
 
 def get_all_playlists_for_channel(channel_id):
     def get_all_playlists(channel_id, next_page):
+        print(f"Getting playlists from {channel_id}", file=sys.stderr)
         while(next_page):
             next_playlists, next_page = get_single_page_of_playlists(channel_id, next_page)
             yield next_playlists
@@ -159,6 +161,7 @@ if __name__ == "__main__":
             for url in url_list:
                 if not url or url.startswith("#"):
                     continue
+                print(f"Processing {url}...", file=sys.stderr)
                 if basic_channel_url_matcher.search(url):
                     yield get_id_from_basic_url(url)
                 elif user_channel_url_matcher.search(url):
@@ -198,6 +201,6 @@ if __name__ == "__main__":
             channel_name = playlists[0]["snippet"]["channelTitle"]
             print(f"{channel_name}")
             for playlist in playlists:
-                print(f'    {playlist["snippet"]["title"]} -- {playlist["id"]}')
+                print(f'    {playlist["id"]} -- {playlist["snippet"]["title"]}')
         else:
             print(f"channel {channel_id} has no playlists")
