@@ -36,9 +36,12 @@ def make_batches_of_size(big_list, batch_size):
     remain = big_list[num_batches*(batch_size - 1):]
     return unnecessary_recursion(remain, kickstart)
 
-def print_or_not(message):
+def print_or_not(message, end=None):
     if not quiet:
-        print(message)
+        if end:
+            print(message, end)
+        else:
+            print(message)
 
 
 def parse_args(helptext, add_options_callback):

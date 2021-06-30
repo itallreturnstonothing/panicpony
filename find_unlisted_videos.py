@@ -3,14 +3,13 @@ import json
 import sys
 from common import *
 
-list_of_videos_file = "testdata.txt"
 batch_size = 50
 
 
 # retrieve metadata for up to 50 video ids
 def get_videos(id_list):
     if len(id_list) > batch_size:
-        print("too many ids")
+        print_or_not("too many ids")
         return None
 
     response = requests.get(
@@ -23,8 +22,8 @@ def get_videos(id_list):
         )
 
     if not response.status_code == 200:
-        print("it's fucked")
-        print(response.text)
+        print_or_not("it's fucked")
+        print_or_not(response.text)
         return None
 
     json_response = json.loads(response.text)
@@ -34,10 +33,23 @@ def get_videos(id_list):
 
 if __name__ == "__main__":
 
-    with open(list_of_videos_file) as video_list:
-        
-        big_list_of_ids = list(line.rstrip() for line in video_list)
 
+    helptext = HelpText(
+        input = "File containing a list of video IDs, one per line. Default is vidlist.txt. "
+        "Pass - to read from stdin.",
+        output = "Output file. This script will filter the input list and write only the IDs of unlisted, pre-2017 videos found to the output file, one per line. "
+        "Default is no output file, only the typical stdout messages. "
+        "Pass - for machine readable output to stdout. Output to stdout implies quiet operation (no human-readable messages).",
+        default_input = "vidlist.txt"
+    )
+
+    common_args_parsed = parse_args(helptext, lambda x: None)
+    from common import api_key # why is this so dumb
+    video_list = common_args_parsed.in_file
+    output_file = common_args_parsed.out_file
+
+    try:        
+        big_list_of_ids = list(line.rstrip() for line in video_list)
 
 
         # batch them up
@@ -54,8 +66,8 @@ if __name__ == "__main__":
         # unlisted and uploaded earlier than Jan 1 2017
         all_in_danger = []
         for i, batch in enumerate(batches):
-            print(" "*70, end="\r")
-            print(f"processing batch {i+1} of {num_batches} (size {len(batch)})", end="\r")
+            print_or_not(" "*70, end="\r")
+            print_or_not(f"processing batch {i+1} of {num_batches} (size {len(batch)})", end="\r")
 
             vid_metadata = get_videos(batch)
 
@@ -69,10 +81,17 @@ if __name__ == "__main__":
                 ))
             all_in_danger.extend(in_danger)
 
-        print()
+        print_or_not("")
 
         # inform the bad news
-        print(f"{len(all_in_danger)} in danger")
+        print_or_not(f"{len(all_in_danger)} in danger")
         for vid in all_in_danger:
-            print(f'{vid["id"]} -- {vid["snippet"]["title"]}')
+            vid_id = vid["id"]
+            print_or_not(f'{vid_id} -- {vid["snippet"]["title"]}')
+            if output_file:
+                output_file.write(f"{vid_id}\n")
+    finally:
+        video_list.close()
+        if output_file:
+            output_file.close()
 
