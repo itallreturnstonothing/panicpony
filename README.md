@@ -9,10 +9,10 @@ All other requirements should be in the standard library.
 # Usage
 Each script takes an input list and outputs to the console or a machine-readable file.  
 
-Specify the input file with `-i <file/path>`.  
+Specify the input file with `-i <path/to/input/file>`.  
 Input lines that are empty space or that start with # are ignored.  
 
-Specify the output file with `-o <file/path>`.  
+Specify the output file with `-o <path/to/output/file>`.  
 If the file exists it will be overwritten!  
 
 If you want to use a different API key pass `--key <your key>`.  
