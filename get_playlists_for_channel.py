@@ -157,6 +157,8 @@ if __name__ == "__main__":
 
         def process_urls(url_list):
             for url in url_list:
+                if not url or url.startswith("#"):
+                    continue
                 if basic_channel_url_matcher.search(url):
                     yield get_id_from_basic_url(url)
                 elif user_channel_url_matcher.search(url):
