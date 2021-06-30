@@ -8,6 +8,8 @@ import math
 
 api_key = "AIzaSyA-dlBUjVQeuc4a6ZN4RkNUYDFddrVLxrA"
 
+consent_cookies = {"CONSENT": "YES+cb.20210622-13-p0.en+FX+677"}
+
 # const
 critical_datetime = datetime(year=2017, month=1, day=2, tzinfo=timezone.utc)
 # january 2 just to be safe
