@@ -1,4 +1,3 @@
-import io
 
 line_length = 20    # length of each line including the newline
                     # example: "youtube --GdlhQqIrc\n" is length 20
@@ -8,8 +7,7 @@ total_lines = 101 #415741
 # the current position better be at the start of a line.
 def read_id(ids_file, return_to_staring_position=True):
     starting_position = ids_file.tell()
-    ids_file.seek(8, io.SEEK_CUR)
-    vid_id = ids_file.read(12)[:-1]
+    vid_id = ids_file.read(20)[8:19]
     if return_to_staring_position:
         ids_file.seek(starting_position)
     return vid_id.decode()
