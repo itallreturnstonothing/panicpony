@@ -20,36 +20,45 @@ def binary_search_for_id(vid_id, ids_file):
     def do_search(vid_id, ids_file, lower_bound, upper_bound, threshold):
         #print(f"{lower_bound} {upper_bound}")
         if ( upper_bound - lower_bound ) <= threshold:
-            # just start looping through lines
-            position_of_last_line = upper_bound * line_length
-            # seek to start
+            # construct a list of ids and search it.
+            # the list will be at most threshold items large, so it should be 
+            # small enough to search quickly. 
+
+            # seek to beginning of search region
             ids_file.seek(lower_bound * line_length)
-            while ids_file.tell() < position_of_last_line:
-                check_id = read_id(ids_file, False)
-                #print(check_id)
-                if check_id == vid_id:
-                    # there it is
-                    return True
-            # checked all ids between upper and lower bound,
-            # didn't find the id we were looking for. 
-            return False
+
+            # make list (actually a generator, same effect)
+            search_these = (read_id(ids_file, False) for _ in range(upper_bound - lower_bound))
+
+            return vid_id in search_these
+
         else: # do binary search
-            half_lines = (upper_bound - lower_bound) >> 1 # integer division by 2
-            midpoint = lower_bound + half_lines
+
+            # get the id at the midpoint
+            divide_in_half = (upper_bound - lower_bound) >> 1 # integer division by 2
+            midpoint = lower_bound + divide_in_half
             # seek file to midpoint
             ids_file.seek(midpoint * line_length)
             id_at_midpoint = read_id(ids_file)
+
+            # narrow the search region
             if vid_id >= id_at_midpoint:
                 # search midpoint to upper_bound
                 lower_bound = midpoint
             else:
                 # search lower_bound to midpoint
                 upper_bound = midpoint
+
             return do_search(vid_id, ids_file, lower_bound, upper_bound, threshold)
 
-    # with open("already_archived_list.txt", "rb") as ids_file:
-    #     return do_search(vid_id, ids_file, 0, total_lines, 10)
     return do_search(vid_id, ids_file, 0, total_lines, 100)
+
+
+def search_for_several_ids(vid_ids):
+    with open("already_archived_list.txt", "rb") as ids_file:
+        pass
+        # do I filter for ids that ARE in the list?
+        # or should I return ids that are NOT in the list?
 
 
 if __name__ == "__main__":
@@ -62,7 +71,9 @@ if __name__ == "__main__":
             all_ids.append(read_id(ids_file, False))
 
         print("done")
-        # print(all(binary_search_for_id(vid_id, ids_file) for vid_id in all_ids))
+        print(all(binary_search_for_id(vid_id, ids_file) for vid_id in all_ids))
+        do_not_exist = ['Sz7Ei6KT0jo', 'qJ9wwxHzoXW', '_edaJZx9YCv', '2empZO1zEsB', '_FKgJSJuLl9', 'Swfj3JPEddp', '9v4M2nUz2zl', 'XsTbZ0ta8SN', 'L2mj2G3y0mp', 'sP0ECIxnEOv']
+        print(any(binary_search_for_id(vid_id, ids_file) for vid_id in do_not_exist))
         # print("timing search_list")
         # def search_list(all_ids):
         #     sample = random.sample(all_ids, 100)
