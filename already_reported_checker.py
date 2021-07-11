@@ -17,7 +17,8 @@ def read_id(ids_file, return_to_staring_position=True):
 
 
 def binary_search_for_id(vid_id, ids_file):
-    def do_search(vid_id, ids_file, lower_bound, upper_bound, threshold):
+    threshold = 100
+    def do_search(lower_bound, upper_bound):
         #print(f"{lower_bound} {upper_bound}")
         if ( upper_bound - lower_bound ) <= threshold:
             # construct a list of ids and search it.
@@ -49,9 +50,9 @@ def binary_search_for_id(vid_id, ids_file):
                 # search lower_bound to midpoint
                 upper_bound = midpoint
 
-            return do_search(vid_id, ids_file, lower_bound, upper_bound, threshold)
+            return do_search(lower_bound, upper_bound)
 
-    return do_search(vid_id, ids_file, 0, total_lines, 100)
+    return do_search(0, total_lines)
 
 
 def search_for_several_ids(vid_ids):
