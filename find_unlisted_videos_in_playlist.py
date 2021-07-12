@@ -45,33 +45,71 @@ def get_all_videos_from_playlist(playlist_id):
 if __name__ == "__main__":
 
     helptext = HelpText(
-        input = "File containing a list of playlist IDs, one per line. Default is playlists.txt. "
-        "Pass - to read from stdin.",
-        output = "Output file. This script will write only the IDs of unlisted, pre-2017 videos found, one per line. "
-        "Default is no output file, only the typical stdout messages. "
-        "Pass - for machine readable output to stdout. Output to stdout implies quiet operation (no human-readable messages).",
+        input = "do not use",
+        output = "do not use",
         default_input = "playlists.txt"
     )
 
-    common_args_parsed = parse_args(helptext, lambda x: None)
+    def add_input_output(parser):
+        parser.add_argument(
+            "playlists",
+            help="File containing a list of playlist ids, one per line.",
+            metavar="playlists"
+        )
+        parser.add_argument(
+            "output_file",
+            help="append unlisted video information to this file",
+            metavar="output-file"
+        )
+
+    common_args_parsed = parse_args(helptext, add_input_output)
     from common import api_key # why is this so dumb
-    playlists = common_args_parsed.in_file
-    output_file = common_args_parsed.out_file
+
+
+
+    input_filename = common_args_parsed.more_args.playlists
+    output_filename = common_args_parsed.more_args.output_file
+    
+    # try to set up the input file
+    try:
+        if input_filename.startswith("~"):
+            import os
+            input_filename = os.path.expanduser(input_filename)
+        playlists = open(input_filename)
+    except Exception as e:
+        print(f"failed to open input file {input_filename}")
+        print(e)
+        exit()
+
+    try:
+        if output_filename.startswith("~"):
+            import os
+            output_filename = os.path.expanduser(output_filename)
+        output_file = open(output_filename, "a")
+    except Exception as e:
+        print(f"failed to open output file {output_filename}")
+        print(e)
+        playlists.close()
+        exit()
+
+    resume_from_line = 0
 
     try:
         real_lines = only_real_lines(playlists)
-        for pl_id in (x.rstrip() for x in real_lines):
+        for (i, pl_id) in enumerate(x.rstrip() for x in real_lines):
+            if i < resume_from_line:
+                continue
 
-            print_or_not(f"===== processing {pl_id} =====")
+            # print_or_not(f"===== processing {pl_id} =====")
 
 
             videos = get_all_videos_from_playlist(pl_id)
-            print_or_not(f"{len(videos)} videos")
+            # print_or_not(f"{len(videos)} videos")
 
 
             # find all the unlisted videos in the playlist
             unlisted = list(filter(lambda x: x["status"]["privacyStatus"] == "unlisted", videos))
-            print_or_not(f"{len(unlisted)} unlisted")
+            # print_or_not(f"{len(unlisted)} unlisted")
 
             # parse the upload time for each unlisted video
             # (god damn datetime is a PITA)
@@ -83,12 +121,22 @@ if __name__ == "__main__":
             in_danger = list(filter(lambda x: x[1] < critical_datetime, unlisted_plus_upload_time))
 
             # print findings to the console
-            print_or_not(f"{len(in_danger)} in danger")
+            # print_or_not(f"{len(in_danger)} in danger")
             for (vid, _) in in_danger:
                 vid_id = vid["snippet"]["resourceId"]["videoId"]
-                print_or_not(f'    {vid_id} -- {vid["snippet"]["title"]} ')
-                if output_file:
-                    output_file.write(f"{vid_id}\n")
+                title = vid["snippet"]["title"]
+                thumbnails = vid["snippet"]["thumbnails"]
+                useful = {k : thumbnails[k]["url"] for k in thumbnails.keys() if "url" in thumbnails[k]}
+                thumb_str = json.dumps(useful)
+                # print_or_not(f'    {vid_id} -- {vid["snippet"]["title"]} ')
+                output_file.write(f"{vid_id} -- {thumb_str} -- {title}\n")
+            info =  f"finished index {i} ({pl_id})"
+            pad = 80 - len(info)
+            if pad > 0:
+                print(info + (" " * pad), end="\r")
+            else:
+                print(info)
+        print()
     finally:
         playlists.close()
         if output_file:
