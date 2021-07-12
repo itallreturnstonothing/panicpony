@@ -89,6 +89,9 @@ def parse_args(helptext, add_options_callback):
         input_file = sys.stdin
     else:
         try:
+            if input_filename.startswith("~"):
+                import os
+                input_filename = os.path.expanduser(input_filename)
             input_file = open(input_filename)
         except Exception as e:
             print(f"failed to open input file {input_filename}")
@@ -101,10 +104,14 @@ def parse_args(helptext, add_options_callback):
             import sys
             output_file = sys.stdout
         else:
+            output_filename = args.machine_readable_output
             try:
-                output_file = open(args.machine_readable_output, "w")
+                if output_filename.startswith("~"):
+                    import os
+                    output_filename = os.path.expanduser(output_filename)
+                output_file = open(output_filename, "w") # I think this kills it. 
             except Exception as e:
-                print(f"failed to open output file {args.machine_readable_output}")
+                print(f"failed to open output file {output_filename}")
                 print(e)
                 input_file.close()
                 exit()
