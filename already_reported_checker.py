@@ -14,7 +14,7 @@ def read_id(ids_file, return_to_staring_position=True):
 
 
 
-def binary_search_for_id(vid_id, ids_file):
+def binary_search_for_id(vid_id, ids_file, actual_total_lines=None):
     threshold = 100
     def do_search(lower_bound, upper_bound):
         #print(f"{lower_bound} {upper_bound}")
@@ -50,14 +50,19 @@ def binary_search_for_id(vid_id, ids_file):
 
             return do_search(lower_bound, upper_bound)
 
-    return do_search(0, total_lines)
+    return do_search(0, actual_total_lines if actual_total_lines else total_lines)
 
 
-def search_for_several_ids(vid_ids):
-    with open("already_archived_list.txt", "rb") as ids_file:
-        pass
-        # do I filter for ids that ARE in the list?
-        # or should I return ids that are NOT in the list?
+def filter_for_unknown(vid_ids, ids_filename, actual_total_lines):
+    with open(ids_filename, "rb") as ids_file:
+        return list(
+            filter(
+                lambda x: not binary_search_for_id(x, ids_file, actual_total_lines),
+                vid_ids
+            )
+        )
+
+
 
 
 if __name__ == "__main__":

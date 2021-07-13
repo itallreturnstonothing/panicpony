@@ -36,7 +36,7 @@ def merge(f1, f2, output):
             write_id(f1_id, output)
             f1_id = read_id(f1)
             f2_id = read_id(f2)
-        elif f1_id < f1_id:
+        elif f1_id < f2_id:
             write_id(f1_id, output)
             f1_id = read_id(f1)
         elif f2_id < f1_id:
@@ -103,4 +103,4 @@ if __name__ == "__main__":
         f1.seek(0)
         f2.seek(0)
         merge(f1, f2, output)
-        
+
