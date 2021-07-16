@@ -247,8 +247,9 @@ if __name__ == "__main__":
 
     with channels_file:
         with output_file:
-            start_position = 28200
-            line_length = len("https://www.youtube.com/channel/UCdMRGwr7vb9o1jcYFgz2CAg\n")
+            start_position = 608
+            # line_length = len("https://www.youtube.com/channel/UCdMRGwr7vb9o1jcYFgz2CAg\n")
+            line_length = len("UCdMRGwr7vb9o1jcYFgz2CAg\n")
             # figure out how many lines there are in total
             channels_file.seek(0, io.SEEK_END)
             file_size = channels_file.tell()
@@ -260,9 +261,13 @@ if __name__ == "__main__":
             def get_batches():
                 while True:
                     chunk = channels_file.read(batch_size * line_length)
-                    batch = list(process_urls(chunk[:-1].split("\n")))
-                    yield batch
-                    if len(chunk) < batch_size * line_length:
+                    # batch = list(process_urls(chunk[:-1].split("\n")))
+                    if chunk:
+                        batch = list(chunk[:-1].split("\n"))
+                        yield batch
+                        if len(chunk) < batch_size * line_length:
+                            break
+                    else:
                         break
 
             for (i, batch) in enumerate(get_batches()):
@@ -270,6 +275,7 @@ if __name__ == "__main__":
                 channel_upload_playlists = get_upload_playlists_for_channels(batch)
                 channel_playlists = list(flatten(get_all_playlists_for_channel(channel_id) for channel_id in batch))
                 all_playlists = channel_upload_playlists + channel_playlists
+
 
                 for channel_id in batch:
                     playlists = list(filter(lambda x: x["snippet"]["channelId"] == channel_id, all_playlists))

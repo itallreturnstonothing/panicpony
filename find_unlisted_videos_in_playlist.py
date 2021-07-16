@@ -130,6 +130,7 @@ if __name__ == "__main__":
                 thumb_str = json.dumps(useful)
                 # print_or_not(f'    {vid_id} -- {vid["snippet"]["title"]} ')
                 output_file.write(f"{vid_id} -- {thumb_str} -- {title}\n")
+                # write channel name and ID too, to better fit metadata.json
             info =  f"finished index {i} ({pl_id})"
             pad = 80 - len(info)
             if pad > 0:

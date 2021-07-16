@@ -5,16 +5,16 @@ total_lines = 101 #415741
 
 # read the video id from ids_file at the current position.
 # the current position better be at the start of a line.
-def read_id(ids_file, return_to_staring_position=True):
+def read_id(ids_file, return_to_starting_position=True):
     starting_position = ids_file.tell()
     vid_id = ids_file.read(20)[8:19]
-    if return_to_staring_position:
+    if return_to_starting_position:
         ids_file.seek(starting_position)
     return vid_id.decode()
 
 
 
-def binary_search_for_id(vid_id, ids_file, actual_total_lines=None):
+def binary_search_for_id(vid_id, ids_file, actual_total_lines=total_lines, read_id=read_id, line_length=line_length):
     threshold = 100
     def do_search(lower_bound, upper_bound):
         #print(f"{lower_bound} {upper_bound}")
@@ -50,14 +50,20 @@ def binary_search_for_id(vid_id, ids_file, actual_total_lines=None):
 
             return do_search(lower_bound, upper_bound)
 
-    return do_search(0, actual_total_lines if actual_total_lines else total_lines)
+    return do_search(0, actual_total_lines)
 
 
-def filter_for_unknown(vid_ids, ids_filename, actual_total_lines):
+def filter_for_unknown(vid_ids, ids_filename, actual_total_lines, read_id=read_id, line_length=line_length):
     with open(ids_filename, "rb") as ids_file:
         return list(
             filter(
-                lambda x: not binary_search_for_id(x, ids_file, actual_total_lines),
+                lambda x: not binary_search_for_id(
+                    x, 
+                    ids_file, 
+                    actual_total_lines,
+                    read_id,
+                    line_length
+                ),
                 vid_ids
             )
         )
