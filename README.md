@@ -57,6 +57,17 @@ Process myplaylists.txt and output only to at-risk.txt
 `python3 find_unlisted_videos_in_playlist.py -i myplaylists.txt -o at-risk.txt -q`  
 
 
+## `make_metadata_json.py`
+This is designed to be a standalone script for making the metadata.json file that https://github.com/Pyxia-Code/unlisted-pony-tools/tree/master/video_browser uses to show videos.  
+The input file is a list of youtube video IDs like the `find_unlisted_videos.py` script.  
+The output is a file that can overwrite `metadata.json` in the video browser. You can then open `index.html` with your web browser and it will show the videos from your input file.  
+**The Advanced section does not apply to this script.** Those features are not implemented. 
+### Example
+Construct metadata from a file called my_yt_ids.txt and replace the browser's metadata.json with the new one  
+`python3 make_metadata_json.py my_yt_ids.txt new_metadata.json`  
+`cp new_metadata.json /path/to/video_browser/metadata.json`  
+`firefox --private-window /path/to/video_browser/index.html`
+
 # Advanced
 Suppress console output with `-q`. It is an error to use `-q` without an output file, since the script will not do anything useful.  
 
