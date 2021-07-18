@@ -3,6 +3,7 @@ import requests
 import json
 import re
 import io
+import os
 import math
 import time
 from more_itertools import flatten
@@ -166,10 +167,7 @@ def get_channel_names(channel_ids):
 '''
 
 def special_parse_args():
-    global api_key
     parser = argparse.ArgumentParser()
-    parser.add_argument("--key", help="Optional API key to use. There is a default key.")
-
     parser.add_argument(
         "channel_list",
         help="File containing a list of channel links, one per line.",
@@ -180,22 +178,24 @@ def special_parse_args():
         help="append playlist information to this file",
         metavar="output-file"
     )
+    parser.add_argument(
+        "-r",
+        "--resume-from",
+        help="resume reading input file from this line",
+        type=int,
+        metavar="line-number"
+    )
+
 
     args = parser.parse_args()
-    print(args)
 
-    if args.key:
-        api_key = args.key
-    
 
     input_filename = args.channel_list
     output_filename = args.output_file
     
     # try to set up the input file
     try:
-        if input_filename.startswith("~"):
-            import os
-            input_filename = os.path.expanduser(input_filename)
+        input_filename = os.path.expanduser(input_filename)
         input_file = open(input_filename)
     except Exception as e:
         print(f"failed to open input file {input_filename}")
@@ -203,9 +203,7 @@ def special_parse_args():
         exit()
 
     try:
-        if output_filename.startswith("~"):
-            import os
-            output_filename = os.path.expanduser(output_filename)
+        output_filename = os.path.expanduser(output_filename)
         output_file = open(output_filename, "a")
     except Exception as e:
         print(f"failed to open output file {output_filename}")
@@ -213,14 +211,13 @@ def special_parse_args():
         input_file.close()
         exit()
 
-    return (input_file, output_file)
+    return (input_file, output_file, args.resume_from)
 
 
 
 if __name__ == "__main__":
 
-    (channels_file, output_file) = special_parse_args()
-    from common import api_key # why is this so dumb
+    (channels_file, output_file, resume_from) = special_parse_args()
 
 
     def get_id_from_basic_url(url):
@@ -245,46 +242,39 @@ if __name__ == "__main__":
                 print(f"can't handle url {url}")
 
 
-    with channels_file:
-        with output_file:
-            start_position = 608
-            # line_length = len("https://www.youtube.com/channel/UCdMRGwr7vb9o1jcYFgz2CAg\n")
-            line_length = len("UCdMRGwr7vb9o1jcYFgz2CAg\n")
-            # figure out how many lines there are in total
-            channels_file.seek(0, io.SEEK_END)
-            file_size = channels_file.tell()
-            line_count = file_size // line_length
-            print(f"channels file has {line_count} lines")
-            channels_file.seek(start_position * line_length)
-            batches_to_process = math.ceil((line_count - start_position) / batch_size)
+    with channels_file, output_file:
+        # line_length = len("https://www.youtube.com/channel/UCdMRGwr7vb9o1jcYFgz2CAg\n")
+        line_length = len("UCdMRGwr7vb9o1jcYFgz2CAg\n")
+        # figure out how many lines there are in total
+        channels_file.seek(0, io.SEEK_END)
+        file_size = channels_file.tell()
+        line_count = file_size // line_length
+        print(f"channels file has {line_count} lines")
+        start_position = (resume_from - 1) * line_length if resume_from else 0
+        channels_file.seek(start_position)
 
-            def get_batches():
-                while True:
-                    chunk = channels_file.read(batch_size * line_length)
-                    # batch = list(process_urls(chunk[:-1].split("\n")))
-                    if chunk:
-                        batch = list(chunk[:-1].split("\n"))
-                        yield batch
-                        if len(chunk) < batch_size * line_length:
-                            break
-                    else:
-                        break
-
-            for (i, batch) in enumerate(get_batches()):
-                print(f"processing batch {i+1} of {batches_to_process} ({len(batch)})")
-                channel_upload_playlists = get_upload_playlists_for_channels(batch)
-                channel_playlists = list(flatten(get_all_playlists_for_channel(channel_id) for channel_id in batch))
-                all_playlists = channel_upload_playlists + channel_playlists
+        def get_me_ids():
+            while True:
+                line = channels_file.read(line_length)
+                if line:
+                    yield line[:-1]
+                else:
+                    break
+        for channel_id in get_me_ids():
+            line_index = channels_file.tell() // line_length
+            print("", end="\r")
+            print(f"line {line_index + 1} ({round(line_index / line_count * 100)}%)", end="")
+            channel_playlists = list(get_all_playlists_for_channel(channel_id))
 
 
-                for channel_id in batch:
-                    playlists = list(filter(lambda x: x["snippet"]["channelId"] == channel_id, all_playlists))
-                    if len(playlists):
-                        channel_name = playlists[0]["snippet"]["channelTitle"]
-                        output_file.write(f"{channel_name}\n")
-                        for playlist in playlists:
-                            output_file.write(f'    {playlist["id"]} -- {playlist["snippet"]["title"]}\n')
-                    else:
-                        output_file.write(f"channel {channel_id} has no playlists\n")
-                
+            if len(channel_playlists):
+                channel_name = channel_playlists[0]["snippet"]["channelTitle"] if "channelTitle" in channel_playlists[0]["snippet"] else "NO TITLE"
+                output_file.write(f"{channel_name}\n")
+                for playlist in channel_playlists:
+                    output_file.write(f'    {playlist["id"]} -- {playlist["snippet"]["title"]}\n')
+            else:
+                output_file.write(f"channel {channel_id} has no playlists\n")
+               
+    print() 
+    print("done")
                 
