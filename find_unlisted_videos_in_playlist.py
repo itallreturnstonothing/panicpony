@@ -94,6 +94,26 @@ if __name__ == "__main__":
 
     resume_from_line = 0
 
+    def make_dictionary(vid, published_at):
+        # print(f'{vid_id} -- {vid["snippet"]["title"]}')
+        vid_id = vid["contentDetails"]["videoId"]
+        channel_id = vid["snippet"]["videoOwnerChannelId"]
+        thumbnail = vid["snippet"]["thumbnails"]["high"]["url"]
+        date_str = published_at.strftime("%Y%m%d")
+        video_browser_format = {
+            "id"            : vid_id,
+            "uploader"      : vid["snippet"]["videoOwnerChannelTitle"],
+            "upload_date"   : date_str,
+            "thumbnail"     : thumbnail,
+            "title"         : vid["snippet"]["title"],
+            "uploader_url"  : f"http://www.youtube.com/channel/{channel_id}",
+            "webpage_url"   : f"https://youtube.com/watch?v={vid_id}",
+            "unavailable"   : None,
+            "reupload"      : None,
+            "archived"      : {}
+        }
+        return video_browser_format    
+
     try:
         real_lines = only_real_lines(playlists)
         for (i, pl_id) in enumerate(x.rstrip() for x in real_lines):
@@ -120,21 +140,15 @@ if __name__ == "__main__":
             # find all the videos uploaded before the critical time
             in_danger = list(filter(lambda x: x[1] < critical_datetime, unlisted_plus_upload_time))
 
-            # print findings to the console
-            # print_or_not(f"{len(in_danger)} in danger")
-            for (vid, _) in in_danger:
-                vid_id = vid["snippet"]["resourceId"]["videoId"]
-                title = vid["snippet"]["title"]
-                thumbnails = vid["snippet"]["thumbnails"]
-                useful = {k : thumbnails[k]["url"] for k in thumbnails.keys() if "url" in thumbnails[k]}
-                thumb_str = json.dumps(useful)
-                # print_or_not(f'    {vid_id} -- {vid["snippet"]["title"]} ')
-                output_file.write(f"{vid_id} -- {thumb_str} -- {title}\n")
-                # write channel name and ID too, to better fit metadata.json
+            for (vid, published_at) in in_danger:
+                dictionary = make_dictionary(vid, published_at)
+                output_file.write(json.dumps(dictionary) + "\n")
+
             info =  f"finished index {i} ({pl_id})"
             pad = 80 - len(info)
             if pad > 0:
-                print(info + (" " * pad), end="\r")
+                print("", end="\r")
+                print(info + (" " * pad), end="")
             else:
                 print(info)
         print()
